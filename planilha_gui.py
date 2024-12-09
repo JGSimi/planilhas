@@ -6,11 +6,97 @@ from PyQt6.QtWidgets import (
     QLineEdit, QFileDialog, QMessageBox, QProgressBar,
     QFrame, QSizePolicy
 )
-from PyQt6.QtCore import Qt, QThread, pyqtSignal, QSize
+from PyQt6.QtCore import Qt, QThread, pyqtSignal, QSize, QSettings
 from PyQt6.QtGui import QFont, QIcon, QPalette, QColor
 from planilha_ia import GeradorPlanilhas
 from datetime import datetime
 import requests
+
+class ThemeManager:
+    def __init__(self):
+        self.settings = QSettings('CursorAI', 'PlanilhasApp')
+        self.is_dark = self.settings.value('dark_theme', False, type=bool)
+        
+    def toggle_theme(self):
+        self.is_dark = not self.is_dark
+        self.settings.setValue('dark_theme', self.is_dark)
+        return self.get_current_theme()
+    
+    def get_current_theme(self):
+        if self.is_dark:
+            return {
+                'bg_color': '#1e1e1e',
+                'text_color': '#ffffff',
+                'secondary_bg': '#2d2d2d',
+                'border_color': '#3d3d3d',
+                'button_bg': '#007AFF',
+                'button_hover': '#0056b3',
+                'button_pressed': '#004494',
+                'secondary_button_bg': '#3d3d3d',
+                'secondary_button_text': '#ffffff',
+                'input_bg': '#2d2d2d',
+                'input_border': '#3d3d3d',
+                'progress_bg': '#2d2d2d',
+                'progress_chunk': '#007AFF',
+                'header_text': '#ffffff',
+                'subtitle_text': '#a0a0a0',
+                'examples_bg': '#252525',
+                'examples_text': '#a0a0a0',
+                'examples_border': '#3d3d3d',
+                'hover_bg': '#3d3d3d',
+                'focus_border': '#007AFF',
+                'error_color': '#ff4444',
+                'success_color': '#4CAF50',
+                'warning_color': '#ff9800',
+                'disabled_bg': '#404040',
+                'disabled_text': '#808080',
+                'link_color': '#007AFF',
+                'link_hover': '#0056b3',
+                'selection_bg': '#264f78',
+                'selection_text': '#ffffff',
+                'scrollbar_bg': '#2d2d2d',
+                'scrollbar_handle': '#4d4d4d',
+                'scrollbar_hover': '#5d5d5d',
+                'tooltip_bg': '#3d3d3d',
+                'tooltip_text': '#ffffff',
+            }
+        else:
+            return {
+                'bg_color': '#f5f5f5',
+                'text_color': '#2C3E50',
+                'secondary_bg': '#ffffff',
+                'border_color': '#ddd',
+                'button_bg': '#007AFF',
+                'button_hover': '#0056b3',
+                'button_pressed': '#004494',
+                'secondary_button_bg': '#f8f9fa',
+                'secondary_button_text': '#333',
+                'input_bg': '#ffffff',
+                'input_border': '#ddd',
+                'progress_bg': '#f0f0f0',
+                'progress_chunk': '#007AFF',
+                'header_text': '#2C3E50',
+                'subtitle_text': '#7F8C8D',
+                'examples_bg': '#f8f9fa',
+                'examples_text': '#666666',
+                'examples_border': '#e9ecef',
+                'hover_bg': '#e9ecef',
+                'focus_border': '#007AFF',
+                'error_color': '#dc3545',
+                'success_color': '#28a745',
+                'warning_color': '#ffc107',
+                'disabled_bg': '#e9ecef',
+                'disabled_text': '#6c757d',
+                'link_color': '#007AFF',
+                'link_hover': '#0056b3',
+                'selection_bg': '#b3d7ff',
+                'selection_text': '#000000',
+                'scrollbar_bg': '#f8f9fa',
+                'scrollbar_handle': '#c1c1c1',
+                'scrollbar_hover': '#a8a8a8',
+                'tooltip_bg': '#2C3E50',
+                'tooltip_text': '#ffffff',
+            }
 
 class StyledButton(QPushButton):
     def __init__(self, text, icon_name=None, primary=True):
@@ -21,44 +107,47 @@ class StyledButton(QPushButton):
         self.setup_style()
         
     def setup_style(self):
+        theme = MainWindow.theme_manager.get_current_theme()
         if self.primary:
-            self.setStyleSheet("""
-                QPushButton {
-                    background-color: #007AFF;
+            self.setStyleSheet(f"""
+                QPushButton {{
+                    background-color: {theme['button_bg']};
                     color: white;
                     border: none;
                     border-radius: 8px;
                     padding: 12px 24px;
                     font-weight: bold;
                     font-size: 14px;
-                }
-                QPushButton:hover {
-                    background-color: #0056b3;
-                }
-                QPushButton:pressed {
-                    background-color: #004494;
-                }
-                QPushButton:disabled {
+                }}
+                QPushButton:hover {{
+                    background-color: {theme['button_hover']};
+                }}
+                QPushButton:pressed {{
+                    background-color: {theme['button_pressed']};
+                }}
+                QPushButton:disabled {{
                     background-color: #cccccc;
-                }
+                }}
             """)
         else:
-            self.setStyleSheet("""
-                QPushButton {
-                    background-color: #f8f9fa;
-                    color: #333;
-                    border: 1px solid #ddd;
+            self.setStyleSheet(f"""
+                QPushButton {{
+                    background-color: {theme['secondary_button_bg']};
+                    color: {theme['secondary_button_text']};
+                    border: 1px solid {theme['border_color']};
                     border-radius: 8px;
                     padding: 12px 24px;
                     font-size: 14px;
-                }
-                QPushButton:hover {
-                    background-color: #e9ecef;
-                    border-color: #bbb;
-                }
-                QPushButton:pressed {
-                    background-color: #dde0e3;
-                }
+                }}
+                QPushButton:hover {{
+                    background-color: {theme['button_hover']};
+                    border-color: {theme['border_color']};
+                    color: white;
+                }}
+                QPushButton:pressed {{
+                    background-color: {theme['button_pressed']};
+                    color: white;
+                }}
             """)
 
 class AutoNameThread(QThread):
@@ -510,11 +599,14 @@ class PromptWidget(QFrame):
         )
 
 class MainWindow(QMainWindow):
+    theme_manager = ThemeManager()
+    
     def __init__(self):
         super().__init__()
         self.setWindowTitle("Gerador de Planilhas com IA 📊")
         self.setMinimumSize(800, 600)
         self.setup_ui()
+        self.apply_theme()
         
     def setup_ui(self):
         # Widget central com margem
@@ -524,26 +616,38 @@ class MainWindow(QMainWindow):
         main_layout.setSpacing(25)
         main_layout.setContentsMargins(30, 30, 30, 30)
         
-        # Cabeçalho
+        # Cabeçalho com botão de tema
         header = QWidget()
         header_layout = QVBoxLayout(header)
         header_layout.setSpacing(10)
         
+        # Layout para título e botão de tema
+        title_row = QHBoxLayout()
+        
+        # Botão de tema
+        self.theme_button = QPushButton()
+        self.theme_button.setFixedSize(32, 32)
+        self.theme_button.setToolTip("Alternar tema claro/escuro")
+        self.theme_button.clicked.connect(self.toggle_theme)
+        self.update_theme_button()
+        title_row.addWidget(self.theme_button, alignment=Qt.AlignmentFlag.AlignRight)
+        
+        header_layout.addLayout(title_row)
+        
         # Título
-        title = QLabel("Gerador de Planilhas com IA")
-        title.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        self.title = QLabel("Gerador de Planilhas com IA")
+        self.title.setAlignment(Qt.AlignmentFlag.AlignCenter)
         title_font = QFont()
         title_font.setPointSize(24)
         title_font.setBold(True)
-        title.setFont(title_font)
-        title.setStyleSheet("color: #2C3E50;")
-        header_layout.addWidget(title)
+        self.title.setFont(title_font)
+        header_layout.addWidget(self.title)
         
         # Subtítulo
-        subtitle = QLabel("Crie planilhas automaticamente usando Inteligência Artificial")
-        subtitle.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        subtitle.setStyleSheet("color: #7F8C8D; font-size: 16px;")
-        header_layout.addWidget(subtitle)
+        self.subtitle = QLabel("Crie planilhas automaticamente usando Inteligência Artificial")
+        self.subtitle.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        self.subtitle.setStyleSheet("font-size: 16px;")
+        header_layout.addWidget(self.subtitle)
         
         main_layout.addWidget(header)
         
@@ -551,11 +655,10 @@ class MainWindow(QMainWindow):
         content = QFrame()
         content.setStyleSheet("""
             QFrame {
-                background-color: white;
+                background-color: transparent;
                 border-radius: 15px;
                 padding: 20px;
                 border: 1px solid #ddd;
-                box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
                 color: #000;
             }
         """)
@@ -598,15 +701,15 @@ class MainWindow(QMainWindow):
         main_layout.addWidget(content)
         
         # Exemplos
-        examples_frame = QFrame()
-        examples_frame.setStyleSheet("""
+        self.examples_frame = QFrame()
+        self.examples_frame.setStyleSheet("""
             QFrame {
                 background-color: #f8f9fa;
                 border-radius: 10px;
                 padding: 15px;
             }
         """)
-        examples_layout = QVBoxLayout(examples_frame)
+        examples_layout = QVBoxLayout(self.examples_frame)
         
         examples_title = QLabel("Exemplos de prompts:")
         examples_title.setStyleSheet("color: #333; font-weight: bold;")
@@ -624,7 +727,7 @@ class MainWindow(QMainWindow):
             example_label.setStyleSheet("color: #666; padding: 3px 0;")
             examples_layout.addWidget(example_label)
             
-        main_layout.addWidget(examples_frame)
+        main_layout.addWidget(self.examples_frame)
         
         # Estilização da janela principal
         self.setStyleSheet("""
@@ -702,6 +805,285 @@ class MainWindow(QMainWindow):
             "Erro",
             f"Erro ao gerar planilha:\n{error}"
         )
+        
+    def update_theme_button(self):
+        theme = self.theme_manager.get_current_theme()
+        icon_color = "white" if self.theme_manager.is_dark else "black"
+        self.theme_button.setStyleSheet(f"""
+            QPushButton {{
+                background-color: {theme['secondary_button_bg']};
+                border: 1px solid {theme['border_color']};
+                border-radius: 16px;
+                qproperty-icon: url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='{icon_color}'><path d='M12 2.25a.75.75 0 01.75.75v2.25a.75.75 0 01-1.5 0V3a.75.75 0 01.75-.75zM7.5 12a4.5 4.5 0 119 0 4.5 4.5 0 01-9 0zM18.894 6.166a.75.75 0 00-1.06-1.06l-1.591 1.59a.75.75 0 101.06 1.061l1.591-1.59zM21.75 12a.75.75 0 01-.75.75h-2.25a.75.75 0 010-1.5H21a.75.75 0 01.75.75zM17.834 18.894a.75.75 0 001.06-1.06l-1.59-1.591a.75.75 0 10-1.061 1.06l1.59 1.591zM12 18a.75.75 0 01.75.75V21a.75.75 0 01-1.5 0v-2.25A.75.75 0 0112 18zM7.758 17.303a.75.75 0 00-1.061-1.06l-1.591 1.59a.75.75 0 001.06 1.061l1.591-1.59zM6 12a.75.75 0 01-.75.75H3a.75.75 0 010-1.5h2.25A.75.75 0 016 12zM6.697 7.757a.75.75 0 001.06-1.06l-1.59-1.591a.75.75 0 00-1.061 1.06l1.59 1.591z'/></svg>");
+                qproperty-iconSize: QSize(20, 20);
+            }}
+            QPushButton:hover {{
+                background-color: {theme['button_hover']};
+                border-color: {theme['button_bg']};
+            }}
+        """)
+    
+    def toggle_theme(self):
+        self.theme_manager.toggle_theme()
+        self.apply_theme()
+        
+    def apply_theme(self):
+        theme = self.theme_manager.get_current_theme()
+        
+        # Atualiza o botão de tema
+        self.update_theme_button()
+        
+        # Aplica o tema à janela principal
+        self.setStyleSheet(f"""
+            QMainWindow {{
+                background-color: {theme['bg_color']};
+            }}
+            
+            QWidget {{
+                background-color: {theme['bg_color']};
+                color: {theme['text_color']};
+            }}
+            
+            QLabel {{
+                color: {theme['text_color']};
+                background-color: transparent;
+            }}
+            
+            QFrame {{
+                background-color: transparent;
+                border: 1px solid {theme['border_color']};
+                color: {theme['text_color']};
+                border-radius: 10px;
+            }}
+
+
+            
+            QTextEdit, QLineEdit {{
+                background-color: transparent;
+                color: {theme['text_color']};
+                border: 2px solid {theme['input_border']};
+                border-radius: 8px;
+                padding: 8px;
+                selection-background-color: {theme['selection_bg']};
+                selection-color: {theme['selection_text']};
+            }}
+            
+            QTextEdit:focus, QLineEdit:focus {{
+                border-color: {theme['focus_border']};
+            }}
+            
+            QTextEdit:disabled, QLineEdit:disabled {{
+                background-color: {theme['disabled_bg']};
+                color: {theme['disabled_text']};
+            }}
+            
+            QProgressBar {{
+                background-color: {theme['progress_bg']};
+                border: none;
+                border-radius: 10px;
+                text-align: center;
+                color: {theme['text_color']};
+                min-height: 20px;
+            }}
+            
+            QProgressBar::chunk {{
+                background-color: {theme['progress_chunk']};
+                border-radius: 10px;
+            }}
+            
+            QPushButton {{
+                border-radius: 8px;
+                padding: 10px 20px;
+                font-weight: bold;
+                font-size: 14px;
+                background-color: {theme['button_bg']};
+                color: white;
+            }}
+            
+            QPushButton:hover {{
+                background-color: {theme['button_hover']};
+            }}
+            
+            QPushButton:pressed {{
+                background-color: {theme['button_pressed']};
+            }}
+            
+            QPushButton:disabled {{
+                background-color: {theme['disabled_bg']};
+                color: {theme['disabled_text']};
+                border: none;
+            }}
+            
+            QScrollBar:vertical {{
+                background-color: {theme['scrollbar_bg']};
+                width: 12px;
+                margin: 0;
+            }}
+            
+            QScrollBar::handle:vertical {{
+                background-color: {theme['scrollbar_handle']};
+                min-height: 20px;
+                border-radius: 6px;
+                margin: 2px;
+            }}
+            
+            QScrollBar::handle:vertical:hover {{
+                background-color: {theme['scrollbar_hover']};
+            }}
+            
+            QScrollBar::add-line:vertical, QScrollBar::sub-line:vertical {{
+                height: 0;
+                background: none;
+            }}
+            
+            QScrollBar:horizontal {{
+                background-color: {theme['scrollbar_bg']};
+                height: 12px;
+                margin: 0;
+            }}
+            
+            QScrollBar::handle:horizontal {{
+                background-color: {theme['scrollbar_handle']};
+                min-width: 20px;
+                border-radius: 6px;
+                margin: 2px;
+            }}
+            
+            QScrollBar::handle:horizontal:hover {{
+                background-color: {theme['scrollbar_hover']};
+            }}
+            
+            QScrollBar::add-line:horizontal, QScrollBar::sub-line:horizontal {{
+                width: 0;
+                background: none;
+            }}
+            
+            QToolTip {{
+                background-color: {theme['tooltip_bg']};
+                color: {theme['tooltip_text']};
+                border: 1px solid {theme['border_color']};
+                border-radius: 4px;
+                padding: 4px;
+            }}
+            
+            QMessageBox {{
+                background-color: {theme['secondary_bg']};
+                color: {theme['text_color']};
+            }}
+            
+            QMessageBox QPushButton {{
+                min-width: 80px;
+                min-height: 30px;
+            }}
+            
+            QFileDialog {{
+                background-color: {theme['secondary_bg']};
+                color: {theme['text_color']};
+            }}
+            
+            QFileDialog QTreeView {{
+                background-color: {theme['input_bg']};
+                color: {theme['text_color']};
+                border: 1px solid {theme['border_color']};
+            }}
+            
+            QFileDialog QTreeView::item:hover {{
+                background-color: {theme['hover_bg']};
+            }}
+            
+            QFileDialog QTreeView::item:selected {{
+                background-color: {theme['selection_bg']};
+                color: {theme['selection_text']};
+            }}
+            
+            QFileDialog QComboBox {{
+                background-color: {theme['input_bg']};
+                color: {theme['text_color']};
+                border: 1px solid {theme['border_color']};
+                border-radius: 4px;
+                padding: 4px;
+            }}
+            
+            QFileDialog QComboBox::drop-down {{
+                border: none;
+            }}
+            
+            QFileDialog QComboBox::down-arrow {{
+                image: url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'><path fill='{theme['text_color']}' d='M2 4l4 4 4-4z'/></svg>");
+                width: 12px;
+                height: 12px;
+            }}
+            
+            QFileDialog QComboBox:on {{
+                background-color: {theme['hover_bg']};
+            }}
+            
+            QFileDialog QComboBox QAbstractItemView {{
+                background-color: {theme['input_bg']};
+                color: {theme['text_color']};
+                selection-background-color: {theme['selection_bg']};
+                selection-color: {theme['selection_text']};
+                border: 1px solid {theme['border_color']};
+            }}
+            
+            QFileDialog QLineEdit {{
+                background-color: {theme['input_bg']};
+                color: {theme['text_color']};
+                border: 1px solid {theme['border_color']};
+                border-radius: 4px;
+                padding: 4px;
+            }}
+            
+            QFileDialog QToolButton {{
+                background-color: {theme['secondary_button_bg']};
+                color: {theme['secondary_button_text']};
+                border: 1px solid {theme['border_color']};
+                border-radius: 4px;
+                padding: 4px;
+            }}
+            
+            QFileDialog QToolButton:hover {{
+                background-color: {theme['hover_bg']};
+            }}
+            
+            QFileDialog QToolButton:pressed {{
+                background-color: {theme['button_pressed']};
+                color: white;
+            }}
+        """)
+        
+        # Atualiza os estilos específicos dos widgets
+        self.title.setStyleSheet(f"""
+            color: {theme['header_text']};
+            font-size: 24px;
+            font-weight: bold;
+            background-color: transparent;
+        """)
+        
+        self.subtitle.setStyleSheet(f"""
+            color: {theme['subtitle_text']};
+            font-size: 16px;
+            background-color: transparent;
+        """)
+        
+        # Atualiza o frame de exemplos
+        self.examples_frame.setStyleSheet(f"""
+            QFrame {{
+                background-color: {theme['examples_bg']};
+                border: 1px solid {theme['examples_border']};
+                border-radius: 10px;
+                padding: 15px;
+            }}
+            QLabel {{
+                color: {theme['examples_text']};
+                padding: 3px 0;
+                background-color: transparent;
+            }}
+        """)
+        
+        # Atualiza os estilos dos botões
+        for button in self.findChildren(StyledButton):
+            button.setup_style()
 
 def main():
     app = QApplication(sys.argv)
