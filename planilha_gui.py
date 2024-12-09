@@ -554,6 +554,9 @@ class MainWindow(QMainWindow):
                 background-color: white;
                 border-radius: 15px;
                 padding: 20px;
+                border: 1px solid #ddd;
+                box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+                color: #000;
             }
         """)
         content_layout = QVBoxLayout(content)
